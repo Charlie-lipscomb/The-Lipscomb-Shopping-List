@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>View Shopping List</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f9f9f9;
+      padding: 40px;
+    }
+    h1 {
+      color: #333;
+    }
+    ul {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      list-style: none;
+    }
+    li {
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+  </style>
+</head>
+<body>
+  <h1>Shared Shopping List</h1>
+  <ul id="list"></ul>
+
+  <script>
+    const GIST_ID = "PASTE_YOUR_GIST_ID_HERE";
+    const TOKEN = "PASTE_YOUR_GITHUB_TOKEN_HERE";
+
+    async function fetchList() {
+      const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
+        headers: { Authorization: `token ${TOKEN}` }
+      });
+      const data = await res.json();
+      return JSON.parse(data.files["shopping-list.json"].content);
+    }
+
+    async function load() {
+      const list = await fetchList();
+      const ul = document.getElementById("list");
+      list.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        ul.appendChild(li);
+      });
+    }
+
+    load();
+  </script>
+</body>
+</html>
