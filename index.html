@@ -5,213 +5,102 @@
   <title>Shared Shopping List</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    :root {
-      --bg: #f7f9fc;
-      --card-bg: #ffffff;
-      --accent: #007bff;
-      --text: #333;
-      --radius: 12px;
-      --shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-      --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
     body {
-      margin: 0;
-      font-family: var(--font);
-      background-color: var(--bg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
+      font-family: sans-serif;
+      background: #f4f4f4;
+      padding: 2rem;
+      max-width: 500px;
+      margin: auto;
     }
-
-    .card {
-      background: var(--card-bg);
-      padding: 30px;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      max-width: 400px;
-      width: 90%;
+    h1 {
       text-align: center;
-      animation: fadeIn 0.6s ease-out;
     }
-
-    h1,
-    h2 {
-      color: var(--text);
-    }
-
-    input[type='password'],
-    input[type='text'] {
-      width: 80%;
+    input {
       padding: 10px;
-      margin: 10px 0;
-      border: 1px solid #ddd;
-      border-radius: var(--radius);
+      width: 70%;
       font-size: 16px;
-      transition: border 0.2s;
     }
-
-    input:focus {
-      border-color: var(--accent);
-      outline: none;
-    }
-
     button {
-      background: var(--accent);
+      padding: 10px;
+      font-size: 16px;
+      background: #007bff;
       color: white;
       border: none;
-      padding: 10px 20px;
-      margin: 10px;
-      border-radius: var(--radius);
-      font-size: 16px;
       cursor: pointer;
-      transition: background 0.3s ease;
     }
-
-    button:hover {
-      background: #0056b3;
-    }
-
     ul {
       list-style: none;
       padding: 0;
-      margin-top: 20px;
+      margin-top: 1rem;
     }
-
     li {
-      background: #f1f3f5;
-      margin: 8px auto;
-      padding: 10px 14px;
-      border-radius: var(--radius);
+      background: white;
+      margin: 6px 0;
+      padding: 10px;
+      border-radius: 4px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
-
     li button {
       background: #dc3545;
-      font-size: 14px;
-      padding: 6px 10px;
     }
-
-    #errorMsg {
-      color: red;
-      font-size: 14px;
-    }
-
-    a {
+    #loginPage {
       display: block;
-      margin-top: 20px;
-      color: #007bff;
-      text-decoration: none;
     }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    #listPage {
+      display: none;
+    }
+    .error {
+      color: red;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <div class="card" id="loginPage">
-    <h2>Enter Password</h2>
-    <input type="password" id="passwordInput" placeholder="Password" />
+  <!-- Login Page -->
+  <div id="loginPage">
+    <h1>Login to View Shopping List</h1>
+    <input type="password" id="passwordInput" placeholder="Enter password" />
     <button onclick="checkPassword()">Login</button>
-    <p id="errorMsg"></p>
+    <p id="errorMsg" class="error"></p>
   </div>
 
-  <div class="card" id="listPage" style="display: none">
+  <!-- Shopping List Page -->
+  <div id="listPage">
     <h1>Shopping List</h1>
     <input type="text" id="itemInput" placeholder="Add an item..." />
     <button onclick="addItem()">Add</button>
     <ul id="shoppingList"></ul>
-    <a href="view.html">View-only version</a>
   </div>
 
   <script>
-    const PASSWORD = "Lipscomb";
-    const GIST_ID = "2adb7fdd434312f2379bed8e1dd4194d";
-    const TOKEN = "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";
+    const PASSWORD = 'Lipscomb';  // Password set to "Lipscomb"
 
     async function fetchList() {
       try {
-        const res = await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-          headers: { Authorization: `token ${TOKEN}` }
-        });
-        const data = await res.json();
-        if (!data.files["shopping-list.json"]) throw new Error("File not found in Gist");
-        return JSON.parse(data.files["shopping-list.json"].content);
+        const res = await fetch("http://localhost:3000/list");
+        return await res.json();
       } catch (err) {
-        console.error("Fetch list failed:", err);
-        alert("Couldn't load shopping list.");
+        console.error("Could not load list:", err);
         return [];
       }
     }
 
-    async function updateList(newList) {
+    async function updateList(list) {
       try {
-        await fetch(`https://api.github.com/gists/${GIST_ID}`, {
-          method: "PATCH",
-          headers: {
-            Authorization: `token ${TOKEN}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            files: {
-              "shopping-list.json": {
-                content: JSON.stringify(newList, null, 2)
-              }
-            }
-          })
+        await fetch("http://localhost:3000/list", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ list }) // Send the list as part of the body
         });
       } catch (err) {
-        console.error("Update failed:", err);
-        alert("Couldn't update the list.");
+        console.error("Could not save list:", err);
       }
     }
 
-    function checkPassword() {
-      const input = document.getElementById('passwordInput').value;
-      if (input === PASSWORD) {
-        document.getElementById('loginPage').style.display = 'none';
-        document.getElementById('listPage').style.display = 'block';
-        loadList();
-      } else {
-        document.getElementById('errorMsg').textContent = "Incorrect password.";
-      }
-    }
-
-    async function loadList() {
+    async function loadAndRender() {
       const list = await fetchList();
-      renderList(list);
-    }
-
-    async function addItem() {
-      const input = document.getElementById('itemInput');
-      const item = input.value.trim();
-      if (!item) return;
-      const list = await fetchList();
-      list.push(item);
-      await updateList(list);
-      input.value = '';
-      renderList(list);
-    }
-
-    async function removeItem(index) {
-      const list = await fetchList();
-      list.splice(index, 1);
-      await updateList(list);
-      renderList(list);
-    }
-
-    function renderList(list) {
       const ul = document.getElementById("shoppingList");
       ul.innerHTML = '';
       list.forEach((item, index) => {
@@ -219,10 +108,36 @@
         li.textContent = item;
         const btn = document.createElement("button");
         btn.textContent = "Remove";
-        btn.onclick = () => removeItem(index);
+        btn.onclick = async () => {
+          const newList = [...list.slice(0, index), ...list.slice(index + 1)];
+          await updateList(newList);
+          loadAndRender();
+        };
         li.appendChild(btn);
         ul.appendChild(li);
       });
+    }
+
+    async function addItem() {
+      const input = document.getElementById("itemInput");
+      const value = input.value.trim();
+      if (!value) return;
+      const list = await fetchList();
+      list.push(value);
+      await updateList(list);
+      input.value = '';
+      loadAndRender();
+    }
+
+    function checkPassword() {
+      const input = document.getElementById("passwordInput").value;
+      if (input === PASSWORD) {
+        document.getElementById("loginPage").style.display = "none";
+        document.getElementById("listPage").style.display = "block";
+        loadAndRender();
+      } else {
+        document.getElementById("errorMsg").textContent = "Incorrect password. Please try again.";
+      }
     }
   </script>
 </body>
