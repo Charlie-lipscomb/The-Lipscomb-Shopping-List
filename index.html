@@ -66,7 +66,7 @@
 <div class="card" id="loginPage">
   <h2>Enter Password</h2>
   <input type="password" id="passwordInput" placeholder="Password">
-  <button onclick="checkPassword()">Login</button>
+  <button id="loginButton">Login</button>
   <p id="errorMsg" style="color: red;"></p>
 </div>
 
@@ -109,6 +109,7 @@
     }
   }
 
+  document.getElementById('loginButton').addEventListener('click', checkPassword);
   function addItem() {
     const itemInput = document.getElementById('itemInput');
     const itemText = itemInput.value.trim();
