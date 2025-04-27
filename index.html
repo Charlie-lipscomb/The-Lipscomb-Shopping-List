@@ -1,144 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Shared Shopping List</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      font-family: sans-serif;
-      background: #f4f4f4;
-      padding: 2rem;
-      max-width: 500px;
-      margin: auto;
+      background: #f7f9fc;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
     }
-    h1 {
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      width: 90%;
+      max-width: 400px;
       text-align: center;
     }
-    input {
+    input, button {
+      margin-top: 10px;
+      width: 80%;
       padding: 10px;
-      width: 70%;
+      border-radius: 8px;
+      border: 1px solid #ddd;
       font-size: 16px;
     }
     button {
-      padding: 10px;
-      font-size: 16px;
-      background: #007bff;
+      background-color: #007bff;
       color: white;
       border: none;
       cursor: pointer;
     }
+    button:hover {
+      background-color: #0056b3;
+    }
     ul {
       list-style: none;
       padding: 0;
-      margin-top: 1rem;
+      margin-top: 20px;
     }
     li {
-      background: white;
-      margin: 6px 0;
+      background: #f1f3f5;
+      margin: 8px 0;
       padding: 10px;
-      border-radius: 4px;
+      border-radius: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     li button {
-      background: #dc3545;
-    }
-    #loginPage {
-      display: block;
-    }
-    #listPage {
-      display: none;
-    }
-    .error {
-      color: red;
-      text-align: center;
+      background-color: #dc3545;
+      font-size: 14px;
+      padding: 6px 10px;
     }
   </style>
 </head>
 <body>
-  <!-- Login Page -->
-  <div id="loginPage">
-    <h1>Login to View Shopping List</h1>
-    <input type="password" id="passwordInput" placeholder="Enter password" />
-    <button onclick="checkPassword()">Login</button>
-    <p id="errorMsg" class="error"></p>
-  </div>
 
-  <!-- Shopping List Page -->
-  <div id="listPage">
-    <h1>Shopping List</h1>
-    <input type="text" id="itemInput" placeholder="Add an item..." />
-    <button onclick="addItem()">Add</button>
-    <ul id="shoppingList"></ul>
-  </div>
+<div class="card" id="loginPage">
+  <h2>Enter Password</h2>
+  <input type="password" id="passwordInput" placeholder="Password">
+  <button onclick="checkPassword()">Login</button>
+  <p id="errorMsg" style="color: red;"></p>
+</div>
 
-  <script>
-    const PASSWORD = 'Lipscomb';  // Password set to "Lipscomb"
+<div class="card" id="listPage" style="display: none;">
+  <h1>Shopping List</h1>
+  <input type="text" id="itemInput" placeholder="Add an item...">
+  <button onclick="addItem()">Add</button>
+  <ul id="shoppingList"></ul>
+</div>
 
-    async function fetchList() {
-      try {
-        const res = await fetch("http://localhost:3000/list");
-        return await res.json();
-      } catch (err) {
-        console.error("Could not load list:", err);
-        return [];
-      }
+<script type="module">
+  // Paste your Firebase config below
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    databaseURL: "YOUR_DATABASE_URL",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  // Initialize Firebase
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+  import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const listRef = ref(db, "shoppingList");
+
+  const PASSWORD = "Lipscomb";
+
+  function checkPassword() {
+    const input = document.getElementById('passwordInput').value;
+    if (input === PASSWORD) {
+      document.getElementById('loginPage').style.display = 'none';
+      document.getElementById('listPage').style.display = 'block';
+    } else {
+      document.getElementById('errorMsg').innerText = "Incorrect password.";
     }
+  }
 
-    async function updateList(list) {
-      try {
-        await fetch("http://localhost:3000/list", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ list }) // Send the list as part of the body
-        });
-      } catch (err) {
-        console.error("Could not save list:", err);
-      }
+  function addItem() {
+    const itemInput = document.getElementById('itemInput');
+    const itemText = itemInput.value.trim();
+    if (itemText !== "") {
+      push(listRef, itemText);
+      itemInput.value = "";
     }
+  }
 
-    async function loadAndRender() {
-      const list = await fetchList();
-      const ul = document.getElementById("shoppingList");
-      ul.innerHTML = '';
-      list.forEach((item, index) => {
-        const li = document.createElement("li");
-        li.textContent = item;
-        const btn = document.createElement("button");
-        btn.textContent = "Remove";
-        btn.onclick = async () => {
-          const newList = [...list.slice(0, index), ...list.slice(index + 1)];
-          await updateList(newList);
-          loadAndRender();
-        };
-        li.appendChild(btn);
-        ul.appendChild(li);
-      });
-    }
+  function renderList(snapshot) {
+    const listEl = document.getElementById('shoppingList');
+    listEl.innerHTML = "";
+    snapshot.forEach(child => {
+      const li = document.createElement('li');
+      li.textContent = child.val();
+      const btn = document.createElement('button');
+      btn.textContent = "Remove";
+      btn.onclick = () => remove(ref(db, `shoppingList/${child.key}`));
+      li.appendChild(btn);
+      listEl.appendChild(li);
+    });
+  }
 
-    async function addItem() {
-      const input = document.getElementById("itemInput");
-      const value = input.value.trim();
-      if (!value) return;
-      const list = await fetchList();
-      list.push(value);
-      await updateList(list);
-      input.value = '';
-      loadAndRender();
-    }
+  onValue(listRef, snapshot => {
+    renderList(snapshot);
+  });
+</script>
 
-    function checkPassword() {
-      const input = document.getElementById("passwordInput").value;
-      if (input === PASSWORD) {
-        document.getElementById("loginPage").style.display = "none";
-        document.getElementById("listPage").style.display = "block";
-        loadAndRender();
-      } else {
-        document.getElementById("errorMsg").textContent = "Incorrect password. Please try again.";
-      }
-    }
-  </script>
 </body>
 </html>
