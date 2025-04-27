@@ -5,6 +5,7 @@
   <title>Shared Shopping List</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    /* Styling */
     :root {
       --bg: #f7f9fc;
       --card-bg: #ffffff;
@@ -31,10 +32,6 @@
       max-width: 400px;
       width: 90%;
       text-align: center;
-      animation: fadeIn 0.6s ease-out;
-    }
-    h1, h2 {
-      color: var(--text);
     }
     input[type="password"],
     input[type="text"] {
@@ -44,11 +41,6 @@
       border: 1px solid #ddd;
       border-radius: var(--radius);
       font-size: 16px;
-      transition: border 0.2s;
-    }
-    input:focus {
-      border-color: var(--accent);
-      outline: none;
     }
     button {
       background: var(--accent);
@@ -59,7 +51,6 @@
       border-radius: var(--radius);
       font-size: 16px;
       cursor: pointer;
-      transition: background 0.3s ease;
     }
     button:hover {
       background: #0056b3;
@@ -87,10 +78,6 @@
       color: red;
       font-size: 14px;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
   </style>
 </head>
 <body>
@@ -109,23 +96,27 @@
     <ul id="shoppingList"></ul>
   </div>
 
+  <!-- Firebase App (Core) -->
   <script type="module">
+    // Import Firebase modules
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
     import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
-    // Your actual Firebase config:
+    // Your Firebase config
     const firebaseConfig = {
       apiKey: "AIzaSyA17-oEWwe-NrIfpU6xy31n2YXicAus5Dk",
       authDomain: "shared-shoppi.firebaseapp.com",
       databaseURL: "https://shared-shoppi-default-rtdb.europe-west1.firebasedatabase.app",
       projectId: "shared-shoppi",
-      storageBucket: "shared-shoppi.firebasestorage.app",
+      storageBucket: "shared-shoppi.appspot.com",
       messagingSenderId: "622541204660",
       appId: "1:622541204660:web:cb1df6739bef81641dbbe1"
     };
 
+    // Initialize Firebase
     const app = initializeApp(firebaseConfig);
-    const database = getDatabase(app);
+    const db = getDatabase(app);
+    const listRef = ref(db, "shoppingList");
 
     const PASSWORD = "Lipscomb";
 
@@ -140,40 +131,35 @@
       }
     }
 
-    async function addItem() {
+    function addItem() {
       const input = document.getElementById('itemInput');
       const item = input.value.trim();
       if (!item) return;
-
-      const listRef = ref(database, 'shoppingList');
-      await push(listRef, item);
-
+      push(listRef, item);
       input.value = '';
     }
 
     function loadList() {
-      const listRef = ref(database, 'shoppingList');
       onValue(listRef, (snapshot) => {
-        const ul = document.getElementById('shoppingList');
+        const ul = document.getElementById("shoppingList");
         ul.innerHTML = '';
-        snapshot.forEach(childSnapshot => {
+        snapshot.forEach((childSnapshot) => {
           const key = childSnapshot.key;
-          const item = childSnapshot.val();
-          const li = document.createElement('li');
-          li.textContent = item;
-          const btn = document.createElement('button');
+          const value = childSnapshot.val();
+          const li = document.createElement("li");
+          li.textContent = value;
+          const btn = document.createElement("button");
           btn.textContent = "Remove";
-          btn.onclick = () => removeItem(key);
+          btn.onclick = () => remove(ref(db, "shoppingList/" + key));
           li.appendChild(btn);
           ul.appendChild(li);
         });
       });
     }
 
-    async function removeItem(key) {
-      const itemRef = ref(database, 'shoppingList/' + key);
-      await remove(itemRef);
-    }
+    // Expose functions to HTML
+    window.checkPassword = checkPassword;
+    window.addItem = addItem;
 
   </script>
 </body>
