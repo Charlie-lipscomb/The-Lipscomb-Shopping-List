@@ -73,7 +73,7 @@
 <div class="card" id="listPage" style="display: none;">
   <h1>Shopping List</h1>
   <input type="text" id="itemInput" placeholder="Add an item...">
-  <button onclick="addItem()">Add</button>
+  <button id="addButton">Add</button>
   <ul id="shoppingList"></ul>
 </div>
 
@@ -135,6 +135,8 @@
   onValue(listRef, snapshot => {
     renderList(snapshot);
   });
+  document.getElementById('addButton').addEventListener('click', addItem);
+  
 </script>
 
 </body>
