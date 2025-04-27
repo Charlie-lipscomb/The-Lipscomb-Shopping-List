@@ -5,40 +5,64 @@
   <title>Shared Shopping List</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    :root {
+      --bg: #f7f9fc;
+      --card-bg: #ffffff;
+      --accent: #007bff;
+      --text: #333;
+      --radius: 12px;
+      --shadow: 0 8px 16px rgba(0,0,0,0.1);
+      --font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
     body {
-      background: #f7f9fc;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
       margin: 0;
+      font-family: var(--font);
+      background-color: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
     }
     .card {
-      background: white;
+      background: var(--card-bg);
       padding: 30px;
-      border-radius: 12px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-      width: 90%;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
       max-width: 400px;
+      width: 90%;
       text-align: center;
+      animation: fadeIn 0.6s ease-out;
     }
-    input, button {
-      margin-top: 10px;
+    h1, h2 {
+      color: var(--text);
+    }
+    input[type="password"],
+    input[type="text"] {
       width: 80%;
       padding: 10px;
-      border-radius: 8px;
+      margin: 10px 0;
       border: 1px solid #ddd;
+      border-radius: var(--radius);
       font-size: 16px;
+      transition: border 0.2s;
+    }
+    input:focus {
+      border-color: var(--accent);
+      outline: none;
     }
     button {
-      background-color: #007bff;
+      background: var(--accent);
       color: white;
       border: none;
+      padding: 10px 20px;
+      margin: 10px;
+      border-radius: var(--radius);
+      font-size: 16px;
       cursor: pointer;
+      transition: background 0.3s ease;
     }
     button:hover {
-      background-color: #0056b3;
+      background: #0056b3;
     }
     ul {
       list-style: none;
@@ -47,97 +71,110 @@
     }
     li {
       background: #f1f3f5;
-      margin: 8px 0;
-      padding: 10px;
-      border-radius: 8px;
+      margin: 8px auto;
+      padding: 10px 14px;
+      border-radius: var(--radius);
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     li button {
-      background-color: #dc3545;
+      background: #dc3545;
       font-size: 14px;
       padding: 6px 10px;
+    }
+    #errorMsg {
+      color: red;
+      font-size: 14px;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 <body>
 
-<div class="card" id="loginPage">
-  <h2>Enter Password</h2>
-  <input type="password" id="passwordInput" placeholder="Password">
-  <button id="loginButton">Login</button>
-  <p id="errorMsg" style="color: red;"></p>
-</div>
+  <div class="card" id="loginPage">
+    <h2>Enter Password</h2>
+    <input type="password" id="passwordInput" placeholder="Password">
+    <button onclick="checkPassword()">Login</button>
+    <p id="errorMsg"></p>
+  </div>
 
-<div class="card" id="listPage" style="display: none;">
-  <h1>Shopping List</h1>
-  <input type="text" id="itemInput" placeholder="Add an item...">
-  <button id="addButton">Add</button>
-  <ul id="shoppingList"></ul>
-</div>
+  <div class="card" id="listPage" style="display:none;">
+    <h1>Shopping List</h1>
+    <input type="text" id="itemInput" placeholder="Add an item...">
+    <button onclick="addItem()">Add</button>
+    <ul id="shoppingList"></ul>
+  </div>
 
-<script type="module">
-  // Paste your Firebase config below
-  const firebaseConfig = {
-    apiKey: "NrIfpU6xy31n2YXicAus5Dk",
-    authDomain: "http://shared-shoppi.firebaseapp.com",
-    databaseURL: "https://shared-shoppi-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "shared-shoppi",
-    storageBucket: "shared-shoppi.firebasestorage.app",
-    messagingSenderId: "622541204660",
-    appId: "1:622541204660:web:cb1df6739bef81641dbbe1"
-  };
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
 
-  // Initialize Firebase
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-  import { getDatabase, ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+    // Your actual Firebase config:
+    const firebaseConfig = {
+      apiKey: "AIzaSyA17-oEWwe-NrIfpU6xy31n2YXicAus5Dk",
+      authDomain: "shared-shoppi.firebaseapp.com",
+      databaseURL: "https://shared-shoppi-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "shared-shoppi",
+      storageBucket: "shared-shoppi.firebasestorage.app",
+      messagingSenderId: "622541204660",
+      appId: "1:622541204660:web:cb1df6739bef81641dbbe1"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const db = getDatabase(app);
-  const listRef = ref(db, "shoppingList");
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
 
-  const PASSWORD = "Lipscomb";
+    const PASSWORD = "Lipscomb";
 
-  function checkPassword() {
-    const input = document.getElementById('passwordInput').value;
-    if (input === PASSWORD) {
-      document.getElementById('loginPage').style.display = 'none';
-      document.getElementById('listPage').style.display = 'block';
-    } else {
-      document.getElementById('errorMsg').innerText = "Incorrect password.";
+    function checkPassword() {
+      const input = document.getElementById('passwordInput').value;
+      if (input === PASSWORD) {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('listPage').style.display = 'block';
+        loadList();
+      } else {
+        document.getElementById('errorMsg').textContent = "Incorrect password.";
+      }
     }
-  }
-  document.getElementById('loginButton').addEventListener('click', checkPassword);
-  function addItem() {
-    const itemInput = document.getElementById('itemInput');
-    const itemText = itemInput.value.trim();
-    if (itemText !== "") {
-      push(listRef, itemText);
-      itemInput.value = "";
+
+    async function addItem() {
+      const input = document.getElementById('itemInput');
+      const item = input.value.trim();
+      if (!item) return;
+
+      const listRef = ref(database, 'shoppingList');
+      await push(listRef, item);
+
+      input.value = '';
     }
-  }
 
-  function renderList(snapshot) {
-    const listEl = document.getElementById('shoppingList');
-    listEl.innerHTML = "";
-    snapshot.forEach(child => {
-      const li = document.createElement('li');
-      li.textContent = child.val();
-      const btn = document.createElement('button');
-      btn.textContent = "Remove";
-      btn.onclick = () => remove(ref(db, `shoppingList/${child.key}`));
-      li.appendChild(btn);
-      listEl.appendChild(li);
-    });
-  }
+    function loadList() {
+      const listRef = ref(database, 'shoppingList');
+      onValue(listRef, (snapshot) => {
+        const ul = document.getElementById('shoppingList');
+        ul.innerHTML = '';
+        snapshot.forEach(childSnapshot => {
+          const key = childSnapshot.key;
+          const item = childSnapshot.val();
+          const li = document.createElement('li');
+          li.textContent = item;
+          const btn = document.createElement('button');
+          btn.textContent = "Remove";
+          btn.onclick = () => removeItem(key);
+          li.appendChild(btn);
+          ul.appendChild(li);
+        });
+      });
+    }
 
-  onValue(listRef, snapshot => {
-    renderList(snapshot);
-  });
-  document.getElementById('addButton').addEventListener('click', addItem);
-  
-</script>
+    async function removeItem(key) {
+      const itemRef = ref(database, 'shoppingList/' + key);
+      await remove(itemRef);
+    }
 
+  </script>
 </body>
 </html>
